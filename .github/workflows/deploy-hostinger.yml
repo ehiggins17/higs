@@ -1,10 +1,8 @@
-# Deploys site/wp-content/ to the Hostinger WordPress site over FTPS on every push to the branch below.
+# Deploys site/wp-content/ to the WordPress site on every push, through the Site Control plugin's API.
 # One-time setup in GitHub: Settings > Secrets and variables > Actions > New repository secret:
-#   HOSTINGER_FTP_SERVER    e.g. ftp.silver-caribou-284529.hostingersite.com  (hPanel > Files > FTP Accounts)
-#   HOSTINGER_FTP_USERNAME  the FTP account username
-#   HOSTINGER_FTP_PASSWORD  its password
-# Until those exist the run ends green with a notice and uploads nothing. Nothing on the server is ever deleted.
-name: Deploy to Hostinger
+#   AAUW_SITE_TOKEN   the deploy token from WordPress > Settings > Site Control > Create deploy token
+# Optional repository variable AAUW_SITE_URL overrides the site address (set it to https://aauw-aami.org after the domain switch).
+name: Deploy to site
 on:
   push:
     branches: [ claude/find-mom-nonprofit-emails-bp820p, main ]
@@ -13,37 +11,35 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SITE_URL: ${{ vars.AAUW_SITE_URL || 'https://silver-caribou-284529.hostingersite.com' }}
+      SITE_TOKEN: ${{ secrets.AAUW_SITE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Syntax-check PHP
         run: |
           set -e
           find site/wp-content -name '*.php' -print0 | xargs -0 -n1 php -l
-      - name: Are the Hostinger secrets set?
-        id: check
-        env:
-          SERVER: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          USERNAME: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          PASSWORD: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+      - name: Deploy through the Site Control API
         run: |
-          if [ -z "$SERVER" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
-            echo "::notice title=Deploy skipped::Hostinger FTP secrets are not set in this repository, so nothing was uploaded. Changes are deployed through the Site Control API instead."
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
+          set -e
+          if [ -z "$SITE_TOKEN" ]; then
+            echo "::error title=Deploy not configured::Add the repository secret AAUW_SITE_TOKEN (WordPress > Settings > Site Control > Create deploy token)."
+            exit 1
           fi
-      - name: Upload over FTPS
-        if: steps.check.outputs.configured == 'true'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
-          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
-          protocol: ftps
-          local-dir: site/wp-content/
-          server-dir: public_html/wp-content/
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/*.bak-*
+          cd site/wp-content
+          zip -q -r ../../deploy.zip plugins themes -x '*.bak-*' '*.py' '*/.git*'
+          cd ../..
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+          site = os.environ['SITE_URL'].rstrip('/'); tok = os.environ['SITE_TOKEN']
+          def call(path, body):
+              req = urllib.request.Request(f"{site}/wp-json/aauw-control/v1/{path}", data=json.dumps(body).encode(),
+                    headers={'Content-Type': 'application/json', 'X-AAUW-Token': tok, 'User-Agent': 'github-actions-deploy'}, method='POST')
+              with urllib.request.urlopen(req, timeout=300) as r: return json.loads(r.read())
+          z = base64.b64encode(open('deploy.zip', 'rb').read()).decode()
+          print('unzip ->', call('unzip', {'zip_base64': z, 'to': 'wp-content'}))
+          print('flush ->', call('cache/flush', {}))
+          req = urllib.request.Request(f"{site}/wp-json/aauw-control/v1/ping", headers={'X-AAUW-Token': tok, 'User-Agent': 'github-actions-deploy'})
+          with urllib.request.urlopen(req, timeout=60) as r: print('ping ->', json.loads(r.read())['ok'])
+          PY

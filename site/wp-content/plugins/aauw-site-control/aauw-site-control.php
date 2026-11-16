@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Site Control
  * Description: Owner-only remote administration over the REST API: install and activate plugins, read and write theme and plugin files, change settings, export content, and switch domains. Authenticates with the owner's Application Password or a private token header. No arbitrary code execution.
- * Version: 1.0.3
+ * Version: 1.1.0
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -17,6 +17,7 @@ final class AAUW_Site_Control {
 
 	const NS         = 'aauw-control/v1';
 	const OPT_TOKEN  = 'aauw_control_token_hash';
+	const OPT_DEPLOY = 'aauw_control_deploy_hash'; // Second token, for GitHub Actions deploys.
 	const OPT_OWNER  = 'aauw_control_owner_id';
 	const HEADER     = 'X-AAUW-Token';
 	const MAX_UPLOAD = 25 * 1024 * 1024;
@@ -91,6 +92,10 @@ final class AAUW_Site_Control {
 			}
 		}
 		if ( $hash && password_verify( $sent, $hash ) ) {
+			return $this->owner_id();
+		}
+		$deploy = (string) get_option( self::OPT_DEPLOY, '' );
+		if ( $deploy && password_verify( $sent, $deploy ) ) {
 			return $this->owner_id();
 		}
 		return $user_id;
@@ -182,6 +187,7 @@ final class AAUW_Site_Control {
 		$r( '/search-replace', 'POST', 'search_replace' );
 		$r( '/cache/flush', 'POST', 'cache_flush' );
 		$r( '/token/rotate', 'POST', 'token_rotate' );
+		$r( '/token/deploy', 'POST', 'token_deploy' );
 	}
 
 	public function ping() {
@@ -443,7 +449,7 @@ final class AAUW_Site_Control {
 
 	public function option_get( $req ) {
 		$name = sanitize_text_field( $req->get_param( 'name' ) );
-		if ( in_array( $name, array( 'auth_key', 'secure_auth_key', self::OPT_TOKEN ), true ) ) {
+		if ( in_array( $name, array( 'auth_key', 'secure_auth_key', self::OPT_TOKEN, self::OPT_DEPLOY ), true ) ) {
 			return new WP_Error( 'refused', 'That option is not readable here.', array( 'status' => 403 ) );
 		}
 		return rest_ensure_response( array( 'name' => $name, 'value' => get_option( $name ) ) );
@@ -451,7 +457,7 @@ final class AAUW_Site_Control {
 
 	public function option_set( $req ) {
 		$name = sanitize_text_field( $req->get_param( 'name' ) );
-		if ( in_array( $name, array( self::OPT_TOKEN, self::OPT_OWNER, 'active_plugins' ), true ) ) {
+		if ( in_array( $name, array( self::OPT_TOKEN, self::OPT_DEPLOY, self::OPT_OWNER, 'active_plugins' ), true ) ) {
 			return new WP_Error( 'refused', 'Use the dedicated endpoint for that.', array( 'status' => 403 ) );
 		}
 		update_option( $name, $req->get_param( 'value' ) );
@@ -554,6 +560,12 @@ final class AAUW_Site_Control {
 		return 'aauw_' . bin2hex( random_bytes( 24 ) );
 	}
 
+	public function token_deploy() {
+		$t = 'deploy_' . bin2hex( random_bytes( 24 ) );
+		update_option( self::OPT_DEPLOY, password_hash( $t, PASSWORD_DEFAULT ) );
+		return rest_ensure_response( array( 'deploy_token' => $t, 'note' => 'Shown once. Store it as the GitHub repository secret AAUW_SITE_TOKEN.' ) );
+	}
+
 	public function token_rotate() {
 		$t = $this->new_token();
 		update_option( self::OPT_TOKEN, password_hash( $t, PASSWORD_DEFAULT ) );
@@ -588,6 +600,14 @@ final class AAUW_Site_Control {
 		if ( 'revoke' === $_POST['aauw_control_action'] ) {
 			delete_option( self::OPT_TOKEN );
 		}
+		if ( 'deploy' === $_POST['aauw_control_action'] ) {
+			$t = 'deploy_' . bin2hex( random_bytes( 24 ) );
+			update_option( self::OPT_DEPLOY, password_hash( $t, PASSWORD_DEFAULT ) );
+			set_transient( 'aauw_control_show_token_' . get_current_user_id(), $t, 120 );
+		}
+		if ( 'revoke_deploy' === $_POST['aauw_control_action'] ) {
+			delete_option( self::OPT_DEPLOY );
+		}
 		wp_safe_redirect( admin_url( 'options-general.php?page=aauw-site-control' ) );
 		exit;
 	}
@@ -614,6 +634,10 @@ final class AAUW_Site_Control {
 				<p>
 					<button class="button button-primary" name="aauw_control_action" value="rotate"><?php echo $has ? 'Rotate token' : 'Create token'; ?></button>
 					<?php if ( $has ) : ?><button class="button" name="aauw_control_action" value="revoke" onclick="return confirm('Revoke the token? Remote access stops until a new one is created.')">Revoke token</button><?php endif; ?>
+				</p>
+				<p>Deploy token (used by GitHub Actions as the secret AAUW_SITE_TOKEN): <strong><?php echo get_option( self::OPT_DEPLOY ) ? 'set' : 'not set'; ?></strong>
+					<button class="button" name="aauw_control_action" value="deploy"><?php echo get_option( self::OPT_DEPLOY ) ? 'Rotate deploy token' : 'Create deploy token'; ?></button>
+					<?php if ( get_option( self::OPT_DEPLOY ) ) : ?><button class="button" name="aauw_control_action" value="revoke_deploy">Revoke deploy token</button><?php endif; ?>
 				</p>
 			</form>
 			<h2>What the API can do</h2>
