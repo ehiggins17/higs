@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Editor Activity Log
  * Description: Records when each site editor logs in and out, how long they stay, which admin screens and pages they open, and every page they create, edit, publish, trash or upload to. Report under Users > Activity Log, with CSV export.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class AAUW_Activity_Log {
 
-	const VERSION        = '1.2.0';
+	const VERSION        = '1.3.0';
 	const OPTION         = 'aauw_activity_log_settings';
 	const IDLE_MINUTES   = 30;   // A session with no activity for this long is treated as ended.
 	const DEDUPE_SECONDS = 60;   // Don't log the same page for the same user twice within this window.
@@ -493,6 +493,11 @@ final class AAUW_Activity_Log {
 			'callback'            => array( $this, 'rest_status' ),
 			'permission_callback' => array( $this, 'is_owner' ),
 		) );
+		register_rest_route( 'aauw-activity/v1', '/purge', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'rest_purge' ),
+			'permission_callback' => array( $this, 'is_owner' ),
+		) );
 		register_rest_route( 'aauw-activity/v1', '/report', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'rest_report' ),
@@ -522,6 +527,22 @@ final class AAUW_Activity_Log {
 			'ended_by'      => $end ? ( 'logout' === $s->end_reason ? 'logout' : 'timeout' ) : 'still active',
 			'login_at_utc'  => $s->login_at,
 		);
+	}
+
+
+	/** Remove events that have no session key (API or token traffic, never a browser login), optionally limited to a user and UTC window. */
+	public function rest_purge( $request ) {
+		global $wpdb;
+		$user = (int) $request->get_param( 'user' );
+		$from = (string) $request->get_param( 'from_utc' );
+		$to   = (string) $request->get_param( 'to_utc' );
+		$sql  = "DELETE FROM {$this->events_table} WHERE session_key = ''";
+		$args = array();
+		if ( $user ) { $sql .= ' AND user_id = %d'; $args[] = $user; }
+		if ( $from ) { $sql .= ' AND created_at >= %s'; $args[] = $from; }
+		if ( $to )   { $sql .= ' AND created_at <= %s'; $args[] = $to; }
+		$deleted = $args ? $wpdb->query( $wpdb->prepare( $sql, $args ) ) : $wpdb->query( $sql );
+		return rest_ensure_response( array( 'deleted' => (int) $deleted ) );
 	}
 
 	public function rest_status( $request ) {

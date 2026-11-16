@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Site Control
  * Description: Owner-only remote administration over the REST API: install and activate plugins, read and write theme and plugin files, change settings, export content, and switch domains. Authenticates with the owner's Application Password or a private token header. No arbitrary code execution.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -79,6 +79,10 @@ final class AAUW_Site_Control {
 		}
 		if ( ! is_ssl() ) {
 			return $user_id; // Token only travels over HTTPS.
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '';
+		if ( false === strpos( $uri, '/wp-json/' ) && false === strpos( $uri, 'rest_route=' ) ) {
+			return $user_id; // The token authenticates API calls only, never ordinary page views.
 		}
 		$hash = (string) get_option( self::OPT_TOKEN, '' );
 		if ( defined( 'AAUW_CONTROL_TOKEN' ) && AAUW_CONTROL_TOKEN ) {
