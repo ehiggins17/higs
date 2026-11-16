@@ -43,3 +43,21 @@ Redirect 301 /files/2026/02/FINANCIAL-POLICIES-12-2-25-FINAL.pdf /wp-content/upl
 Redirect 301 /files/2026/02/GENERAL-POLICIES-12-2-25-FINAL.pdf /wp-content/uploads/2026/11/GENERAL-POLICIES-12-2-25-FINAL.pdf
 Redirect 301 /files/2026/02/INTEREST-GROUP-POLICIES-12-2-25-FINAL.pdf /wp-content/uploads/2026/11/INTEREST-GROUP-POLICIES-12-2-25-FINAL.pdf
 Redirect 301 /activities/aauw-ann-arbor-used-book-sale-2021-canceled/the-book-sorting-process /book-sale/sorting-process/
+
+# Files from old-files/ once uploaded to the WordPress Media Library in November 2026.
+# If they are uploaded in a later month, change 2026/11 to that year/month.
+Redirect 301 /files/2024/08/MembershipApp-24-25-PAGES.pdf /wp-content/uploads/2026/11/MembershipApp-24-25-PAGES.pdf
+Redirect 301 /files/2020/04/Betty-Bishop-PDF.pdf /wp-content/uploads/2026/11/Betty-Bishop-PDF.pdf
+Redirect 301 /files/2020/04/Amy-Seetoo-PDF.pdf /wp-content/uploads/2026/11/Amy-Seetoo-PDF.pdf
+Redirect 301 /files/2020/03/Kim-Clark.pdf /wp-content/uploads/2026/11/Kim-Clark.pdf
+Redirect 301 /files/2020/04/Kathy-Stroud-PDF.pdf /wp-content/uploads/2026/11/Kathy-Stroud-PDF.pdf
+Redirect 301 /files/2020/06/Marti-Throckmorton-PDf.pdf /wp-content/uploads/2026/11/Marti-Throckmorton-PDf.pdf
+Redirect 301 /files/2025/07/aauw_bsaleflyer2025-color.pdf /wp-content/uploads/2026/11/aauw_bsaleflyer2025-color.pdf
+Redirect 301 /files/2024/08/Flyer-October-24-MJ-Tournament-71324-PDF.pdf /wp-content/uploads/2026/11/Flyer-October-24-MJ-Tournament-71324-PDF.pdf
+Redirect 301 /files/2023/04/MahJongg-Instructions.pdf /wp-content/uploads/2026/11/MahJongg-Instructions.pdf
+Redirect 301 /files/2026/08/Flyer-October-22-MJ-Tournament-2026.pdf /wp-content/uploads/2026/11/Flyer-October-22-MJ-Tournament-2026.pdf
+Redirect 301 /files/2025/09/Mah-Jongg-Update-2025-.pdf /wp-content/uploads/2026/11/Mah-Jongg-Update-2025-.pdf
+Redirect 301 /files/2018/10/Rev3-October-25-MJ-Tournament-2018.pdf /wp-content/uploads/2026/11/Rev3-October-25-MJ-Tournament-2018.pdf
+Redirect 301 /files/2019/10/PROGRAMS-FLYER-FOR-OPEN-HOUSE-8-18-19-UPDATED.pdf /wp-content/uploads/2026/11/PROGRAMS-FLYER-FOR-OPEN-HOUSE-8-18-19-UPDATED.pdf
+Redirect 301 /files/2019/09/Flyer-October-24-MJ-Tournament-2019C-1.pdf /wp-content/uploads/2026/11/Flyer-October-24-MJ-Tournament-2019C-1.pdf
+Redirect 301 /files/2019/10/Flyer-November-20-Silent-AuctionB-2.pdf /wp-content/uploads/2026/11/Flyer-November-20-Silent-AuctionB-2.pdf
