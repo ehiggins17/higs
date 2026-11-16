@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Site Control
  * Description: Owner-only remote administration over the REST API: install and activate plugins, read and write theme and plugin files, change settings, export content, and switch domains. Authenticates with the owner's Application Password or a private token header. No arbitrary code execution.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -102,7 +102,7 @@ final class AAUW_Site_Control {
 
 	/* ------------------------------------------------------------------ paths */
 
-	/** Confine every file operation to wp-content, plus the site's own .htaccess. */
+	/** Confine every file operation to wp-content and the static img folder, plus the site's own .htaccess. */
 	private function resolve( $rel, $must_exist = true ) {
 		$rel = str_replace( '\\', '/', (string) $rel );
 		$rel = ltrim( $rel, '/' );
@@ -111,6 +111,23 @@ final class AAUW_Site_Control {
 		}
 		if ( '.htaccess' === $rel ) {
 			return ABSPATH . '.htaccess';
+		}
+		if ( 'img' === $rel || 0 === strpos( $rel, 'img/' ) ) {
+			// The site's static image folder next to wp-content (carried over from the first build).
+			$base = rtrim( wp_normalize_path( ABSPATH ), '/' ) . '/img';
+			$full = rtrim( wp_normalize_path( ABSPATH ), '/' ) . '/' . $rel;
+			if ( $must_exist ) {
+				$real = realpath( $full );
+				if ( false === $real ) {
+					return new WP_Error( 'not_found', 'No such file: ' . $rel, array( 'status' => 404 ) );
+				}
+				$real = wp_normalize_path( $real );
+				if ( 0 !== strpos( $real . '/', $base . '/' ) ) {
+					return new WP_Error( 'bad_path', 'Path escapes img.', array( 'status' => 400 ) );
+				}
+				return $real;
+			}
+			return $full;
 		}
 		if ( 0 === strpos( $rel, 'wp-content/' ) ) {
 			$rel = substr( $rel, 11 );
