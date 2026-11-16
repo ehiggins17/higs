@@ -1,0 +1,193 @@
+/* Compatibility layer for older browsers. Generated from site.css on 2026-11-16. Loads after site.css; modern browsers skip every block. */
+
+/* iOS 12-13.0: no clamp()/min()/max(). Use the smallest size. */
+@supports not (width: clamp(1px, 2px, 3px)) {
+:root { --gutter: 20px; --section: 48px; }
+h1 { font-size: 2.4rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.25rem; }
+.lede { font-size: 1.2rem; }
+.section--tight { padding-block: 32px; }
+.section__head { margin-bottom: 24px; }
+.nav__list { gap: .6rem; }
+.hero__grid { gap: 32px; padding-block: 56px; }
+.stat strong { font-size: 2rem; }
+.cards { gap: 16px; }
+.card { padding: 22px; }
+.events { gap: 16px; }
+.event { padding: 20px; }
+.split { gap: 32px; }
+.pagehead { padding-block: 44px; }
+.prose h2 { font-size: 1.5rem; }
+.two-col { gap: 32px; }
+.aside { padding: 20px; }
+.cta { padding: 32px; }
+.footer { padding-block: 48px 2rem; }
+.footer__grid { gap: 28px; }
+.notfound h1 { font-size: 3rem; }
+.hero2__grid { gap: 36px; padding-block: 56px 56px; }
+.display { font-size: 2.6rem; }
+.nextcard { padding: 20px; }
+.nextcard h2 { font-size: 1.25rem; }
+@media (max-width: 900px) { .display { font-size: 2.5rem; } }
+.stats2 .stat strong { font-size: 2.6rem; }
+.month { gap: 16px; }
+.month__media--text strong { font-size: 2rem; }
+.month__body { padding: 18px; }
+.photoband img { height: 260px; }
+.photoband figcaption { padding: 60px 0 22px; }
+.photoband strong { font-size: 1.4rem; }
+.wedo { gap: 14px; }
+.quote { font-size: 1.9rem; }
+.mission__grid { gap: 36px; }
+.shop { gap: 20px; }
+.shop__banner > div { padding: 22px; }
+.join2 { gap: 32px; }
+.price strong { font-size: 3rem; }
+.aside--photo > div { padding: 20px; }
+.fb { gap: 24px; }
+.month__media--text strong, .month__media--photo strong { font-size: 1.9rem; }
+.shop__copy { padding: 22px; }
+.bsale { gap: 28px; }
+.polaroid { width: 140px; }
+.fbposts { gap: 14px; }
+.bshero__inner { padding-block: 96px 48px; }
+.bshero h1 { font-size: 2.2rem; }
+.reels { gap: 14px; }
+.steps { gap: 16px; }
+.press { gap: 16px; }
+.pressq p { font-size: 1.2rem; }
+.fbtile strong { font-size: 1.35rem; }
+.lookbook__head { gap: 28px; margin-bottom: 28px; }
+.lookbook__title { font-size: 2.8rem; }
+.looks { gap: 12px; }
+.lookbook__foot { margin-top: 24px; }
+.bsale h2 { font-size: 2.4rem; }
+.camp { padding-block: 64px; }
+.camp__inner { gap: 28px; }
+.camp__title { font-size: 3rem; }
+.camp__row { gap: 10px; }
+.logos__row { gap: 12px; }
+.polaroid--lg { width: 190px; }
+.menu.mega { padding: 22px 0 24px; }
+.mega__grid { gap: 24px; }
+.mega__links { gap: 0 16px; padding-left: 16px; }
+.hhero { padding-block: 48px; }
+.hhero__grid { gap: 28px; }
+.hhero h1 { font-size: 2rem; }
+.quotes { gap: 14px; }
+.quotecard p { font-size: 1.15rem; }
+.logos__row { gap: 10px; }
+.hero2--photo .display { font-size: 2.8rem; }
+.hero2--editorial .display { font-size: 2.9rem; }
+h1 { font-size: 2.6rem; }
+h2 { font-size: 1.9rem; }
+.display { font-size: 2.8rem; }
+:root { --section: 56px; --section-tight: 48px; --gap: 24px; }
+.two-col, .split, .mission__grid, .hero2__grid { gap: 40px; }
+.logos__row { gap: 20px 16px; }
+.logos--dark .logos__row { padding: 24px; }
+.footer__brandrow { gap: 24px; }
+.footer__brand img { width: 200px; }
+.hub { min-height: 78vh; }
+.hub__panel { padding: 48px 28px 48px max(var(--gutter), calc((100vw - var(--wrap)) / 2)); }
+.hub h1 { font-size: 2.3rem; }
+.hub__art { width: 260px; }
+.hub__facts { padding: 56px 24px 24px; }
+.section--mist, .section--navy, .section--explore { padding-block: 56px; }
+.section--mist + .section, .section--navy + .section, .photoband + .section, .ticker + .section, .hub + .section, .pagehead + .section, .subnav + .section { padding-top: 48px; }
+.section:last-of-type { padding-bottom: 56px; }
+.section--tight + .section { padding-top: 40px; }
+.stats2 .stat strong { font-size: 2rem; }
+.section--tight + .section { padding-top: 40px; }
+}
+
+/* Safari < 14.1, iOS < 14.5: no inset, no dvh, no gap in flexbox. */
+@supports not (inset: 0) {
+.hero__media::before { top: 14%; right: -8%; bottom: -8%; left: 14%; }
+@media (max-width: 900px) { .hero__media::before { top: 10%; right: -4%; bottom: -4%; left: 10%; } }
+.card--stretch > a.card__cover { top: 0; right: 0; bottom: 0; left: 0; }
+.hero2__bg { top: 0; right: 0; bottom: 0; left: 0; }
+.hero2__bg::after { top: 0; right: 0; bottom: 0; left: 0; }
+.wedo__item > a.cover { top: 0; right: 0; bottom: 0; left: 0; }
+.shop__banner > img { top: 0; right: 0; bottom: 0; left: 0; }
+.mission__media::before { top: 12%; right: -6%; bottom: -6%; left: 12%; }
+.month__media--photo img { top: 0; right: 0; bottom: 0; left: 0; }
+.month__media--photo::after { top: 0; right: 0; bottom: 0; left: 0; }
+.bshero__bg { top: 0; right: 0; bottom: 0; left: 0; }
+.bshero__shade { top: 0; right: 0; bottom: 0; left: 0; }
+@media (max-width: 860px) { .mission__media::before { top: 8%; right: -4%; bottom: -4%; left: 8%; } }
+.fbtile::before { top: 0; right: 0; bottom: 0; left: 0; }
+.camp__bg { top: 0; right: 0; bottom: 0; left: 0; }
+.camp__shade { top: 0; right: 0; bottom: 0; left: 0; }
+.hero2--photo .hero2__photo { top: 0; right: 0; bottom: 0; left: 0; }
+@media (max-width: 900px) { .nav { top: 0; right: 0; bottom: 0; left: 0; height: 100vh; } }
+.month__card > a.cover, .wedo__item > a.cover, .aside--photo > a.cover { top: 0; right: 0; bottom: 0; left: 0; }
+.hub__media img { top: 0; right: 0; bottom: 0; left: 0; }
+.hero2--angle .hero2__bg::before { top: 0; right: 0; bottom: 0; left: 0; }
+.utility__inner > * + * { margin-left: 1rem; }
+.utility__links > * + * { margin-left: 1.4rem; }
+.utility__links a > * + * { margin-left: .4rem; }
+.textsize > * + * { margin-left: .1rem; }
+.header__inner > * + * { margin-left: 2rem; }
+.nav > * + * { margin-left: 1.5rem; }
+.nav__list > * + * { margin-left: 1.6vw,; }
+.nav__actions > * + * { margin-left: .6rem; }
+@media (max-width: 900px) { .navtoggle > * + * { margin-left: .6rem; } }
+.btn > * + * { margin-left: .5rem; }
+.btn-row { margin: calc(-1 * .8rem) 0 0 calc(-1 * .8rem); } .btn-row > * { margin: .8rem 0 0 .8rem; }
+.card > * + * { margin-top: .4rem; }
+.check > * + * { margin-left: .7rem; }
+.footer__bottom { margin: calc(-1 * 1rem) 0 0 calc(-1 * 1rem); } .footer__bottom > * { margin: 1rem 0 0 1rem; }
+.footer__bottom ul > * + * { margin-left: 1.4rem; }
+.nextcard__top > * + * { margin-left: 1rem; }
+.ticker__track span > * + * { margin-left: 2.4rem; }
+.month__body > * + * { margin-top: .4rem; }
+.photoband figcaption .wrap { margin: calc(-1 * 1.5rem) 0 0 calc(-1 * 1.5rem); } .photoband figcaption .wrap > * { margin: 1.5rem 0 0 1.5rem; }
+.wedo__proof > * + * { margin-left: .5rem; }
+.alloc__legend li > * + * { margin-left: .7rem; }
+.price > * + * { margin-left: .6rem; }
+.bsale__stats { margin: calc(-1 * 1.6rem) 0 0 calc(-1 * 2.4rem); } .bsale__stats > * { margin: 1.6rem 0 0 2.4rem; }
+.nav__btn > * + * { margin-left: .35rem; }
+.subnav ul > * + * { margin-left: .2rem; }
+.fbpost__body > * + * { margin-top: .4rem; }
+.fbpost__meta > * + * { margin-left: .5rem; }
+.fb__links { margin: calc(-1 * .8rem) 0 0 calc(-1 * .8rem); } .fb__links > * { margin: .8rem 0 0 .8rem; }
+.swatches { margin: calc(-1 * .55rem) 0 0 calc(-1 * .55rem); } .swatches > * { margin: .55rem 0 0 .55rem; }
+.logos__lead { margin: calc(-1 * .3rem) 0 0 calc(-1 * 1rem); } .logos__lead > * { margin: .3rem 0 0 1rem; }
+.logos__row li > * + * { margin-top: .6rem; }
+.logos__row a > * + * { margin-left: 12px; }
+@media (max-width: 900px) { .nav__close > * + * { margin-left: .5rem; } }
+.footer__social > * + * { margin-left: 1.4rem; }
+@media (max-width: 700px) { .camp__line > * + * { margin-top: 4px; } }
+@media (max-width: 700px) { .footer__col ul { margin: calc(-1 * 6px) 0 0 calc(-1 * 16px); } .footer__col ul > * { margin: 6px 0 0 16px; } }
+.cal__top { margin: calc(-1 * 16px) 0 0 calc(-1 * 24px); } .cal__top > * { margin: 16px 0 0 24px; }
+.cal__nav > * + * { margin-left: 14px; }
+.cal__tools { margin: calc(-1 * 14px) 0 0 calc(-1 * 28px); } .cal__tools > * { margin: 14px 0 0 28px; }
+.cal__legend { margin: calc(-1 * 8px) 0 0 calc(-1 * 18px); } .cal__legend > * { margin: 8px 0 0 18px; }
+.cal__legend li > * + * { margin-left: 7px; }
+.cal__day > * + * { margin-top: 6px; }
+.cal__months { margin: calc(-1 * 6px) 0 0 calc(-1 * 6px); } .cal__months > * { margin: 6px 0 0 6px; }
+.cal__months button > * + * { margin-left: 6px; }
+.cal__detail > * + * { margin-top: 10px; }
+.hub__facts li > * + * { margin-top: 2px; }
+.xcard__body > * + * { margin-top: 6px; }
+@media (max-width: 700px) { .footer__brandrow > * + * { margin-left: 12px; } }
+}
+
+/* Safari < 15: no aspect-ratio. Reserve the box with padding. */
+@supports not (aspect-ratio: 1 / 1) {
+.month__media { height: 0; padding-top: 56.25%; position: relative; } .month__media > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.month__media { height: 0; padding-top: 56.25%; position: relative; } .month__media > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.mosaic { height: 0; padding-top: 75.00%; position: relative; } .mosaic > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 900px) { .mosaic { height: 0; padding-top: 75.00%; position: relative; } .mosaic > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; } }
+.reel iframe { height: 0; padding-top: 177.78%; position: relative; } .reel iframe > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.fbtile { height: 0; padding-top: 125.00%; position: relative; } .fbtile > * { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+}
+
+/* Safari < 15.4 drops any rule list that contains :focus-visible. Re-state the hover part on its own. */
+.menu__list a:hover { background: var(--mist); }
+.camp__item:hover .camp__img::after { opacity: 1; transform: none; }
+.logos__row a:hover img { filter: none; opacity: 1; transform: translateY(-1px); }
+.mega__col a:hover strong { color: var(--red-ink); text-decoration: underline; text-underline-offset: 3px; }
+.cal__day.has-event:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgba(11,35,70,.45); border-color: var(--navy); outline: none; }
