@@ -3,7 +3,7 @@
 #   HOSTINGER_FTP_SERVER    e.g. ftp.silver-caribou-284529.hostingersite.com  (hPanel > Files > FTP Accounts)
 #   HOSTINGER_FTP_USERNAME  the FTP account username
 #   HOSTINGER_FTP_PASSWORD  its password
-# Only files that exist in site/wp-content/ are uploaded or updated. Nothing on the server is deleted.
+# Until those exist the run ends green with a notice and uploads nothing. Nothing on the server is ever deleted.
 name: Deploy to Hostinger
 on:
   push:
@@ -19,7 +19,21 @@ jobs:
         run: |
           set -e
           find site/wp-content -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Are the Hostinger secrets set?
+        id: check
+        env:
+          SERVER: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          USERNAME: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          PASSWORD: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+        run: |
+          if [ -z "$SERVER" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+            echo "::notice title=Deploy skipped::Hostinger FTP secrets are not set in this repository, so nothing was uploaded. Changes are deployed through the Site Control API instead."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload over FTPS
+        if: steps.check.outputs.configured == 'true'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.HOSTINGER_FTP_SERVER }}
