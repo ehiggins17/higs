@@ -1,0 +1,6 @@
+/* Makes the editing box look like the live page */
+html { background: #fff; }
+body.mce-content-body { max-width: 900px; margin: 16px auto !important; padding: 0 20px !important; background: #fff; }
+.mce-content-body .reveal { opacity: 1 !important; transform: none !important; }
+.mce-content-body section { outline: 1px dashed #d9dde3; outline-offset: 4px; margin-bottom: 18px; }
+.mce-content-body .header, .mce-content-body .utility { display: none; }
