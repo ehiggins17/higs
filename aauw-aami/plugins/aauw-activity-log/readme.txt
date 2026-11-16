@@ -1,7 +1,7 @@
 === AAUW Editor Activity Log ===
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 
 Records what each site editor does: logins, time on the site, screens and pages opened, and every page created, edited, published, trashed or uploaded to.
@@ -39,3 +39,13 @@ It records nothing about ordinary visitors.
 * Sessions ended by closing the browser rather than logging out show as "Timed out (idle)" 30 minutes after the last activity.
 * Tell editors this log exists and what it records.
 * Deleting the plugin removes its tables. Deactivating keeps them.
+
+== Who can see it ==
+
+Only one account: the site's first user (ID 1, username "admin"). Everyone else, including other
+Administrators, sees no Users > Activity Log menu, cannot open the page or the exports, and does not
+see the plugin on the Plugins screen. To hand it to a different account, add this line to wp-config.php:
+
+define( 'AAUW_ACTIVITY_LOG_OWNER', 'username-or-email' );
+
+Anyone with database or file access to the hosting account can still read the raw tables.

