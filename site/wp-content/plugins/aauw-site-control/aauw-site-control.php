@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Site Control
  * Description: Owner-only remote administration over the REST API: install and activate plugins, read and write theme and plugin files, change settings, export content, and switch domains. Authenticates with the owner's Application Password or a private token header. No arbitrary code execution.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -92,7 +92,7 @@ final class AAUW_Site_Control {
 		return $user_id;
 	}
 
-	private function perm() {
+	public function perm() {
 		return $this->is_owner();
 	}
 
