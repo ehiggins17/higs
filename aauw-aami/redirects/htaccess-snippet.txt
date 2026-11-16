@@ -1,0 +1,45 @@
+# AAUW Ann Arbor: redirects for addresses carried over from annarbor-mi.aauw.net
+# Paste this block into .htaccess ABOVE the '# BEGIN WordPress' line (Hostinger: hPanel > Files > File Manager > public_html/.htaccess).
+# Each old document path goes to the copy already uploaded to this site. Verified 2026-11-16.
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{QUERY_STRING} ^p=44$
+RewriteRule ^$ /programs/? [R=301,L]
+RewriteCond %{QUERY_STRING} ^p=4949$
+RewriteRule ^$ /stem/? [R=301,L]
+RewriteCond %{QUERY_STRING} ^p=4705$
+RewriteRule ^$ /stem/? [R=301,L]
+</IfModule>
+
+Redirect 301 /files/2020/02/College-University-Representative-Position-Description.pdf /wp-content/uploads/2026/11/College-University-Representative-Position-Description.pdf
+Redirect 301 /files/2020/02/Computer-Support-Chair-Position-Description.pdf /wp-content/uploads/2026/11/Computer-Support-Chair-Position-Description.pdf
+Redirect 301 /files/2020/02/Corresponding-Secretary-Position-Description.pdf /wp-content/uploads/2026/11/Corresponding-Secretary-Position-Description.pdf
+Redirect 301 /files/2020/02/Directory-Editor-Position-Description.pdf /wp-content/uploads/2026/11/Directory-Editor-Position-Description.pdf
+Redirect 301 /files/2020/02/Dues-Treasurer-Position-Description.pdf /wp-content/uploads/2026/11/Dues-Treasurer-Position-Description.pdf
+Redirect 301 /files/2020/02/Finance-Treasurer-Position-Description.pdf /wp-content/uploads/2026/11/Finance-Treasurer-Position-Description.pdf
+Redirect 301 /files/2020/02/Historian-Position-Description.pdf /wp-content/uploads/2026/11/Historian-Position-Description.pdf
+Redirect 301 /files/2020/02/Mailing-Committee-Description.pdf /wp-content/uploads/2026/11/Mailing-Committee-Description.pdf
+Redirect 301 /files/2020/02/Membership-Vice-President-Position-Description.pdf /wp-content/uploads/2026/11/Membership-Vice-President-Position-Description.pdf
+Redirect 301 /files/2020/02/NCCWSL-Chair-Position-Description.pdf /wp-content/uploads/2026/11/NCCWSL-Chair-Position-Description.pdf
+Redirect 301 /files/2020/02/Name-Tag-Greeters-Position-Description.pdf /wp-content/uploads/2026/11/Name-Tag-Greeters-Position-Description.pdf
+Redirect 301 /files/2020/02/Nominating-Committee-Position-Description.pdf /wp-content/uploads/2026/11/Nominating-Committee-Position-Description.pdf
+Redirect 301 /files/2020/02/Past-President-Position-Description.pdf /wp-content/uploads/2026/11/Past-President-Position-Description.pdf
+Redirect 301 /files/2020/02/Policy-and-Bylaws-Chair.pdf /wp-content/uploads/2026/11/Policy-and-Bylaws-Chair.pdf
+Redirect 301 /files/2020/02/President-Elect-Position-Description.pdf /wp-content/uploads/2026/11/President-Elect-Position-Description.pdf
+Redirect 301 /files/2020/02/President-Position-Description.pdf /wp-content/uploads/2026/11/President-Position-Description.pdf
+Redirect 301 /files/2020/02/Public-Policy-Chair-Position-Description.pdf /wp-content/uploads/2026/11/Public-Policy-Chair-Position-Description.pdf
+Redirect 301 /files/2020/02/Recording-Secretary-Position-Description.pdf /wp-content/uploads/2026/11/Recording-Secretary-Position-Description.pdf
+Redirect 301 /files/2020/02/Social-Co-Chairs-Position-Description.pdf /wp-content/uploads/2026/11/Social-Co-Chairs-Position-Description.pdf
+Redirect 301 /files/2020/02/Webmaster-Position-Description.pdf /wp-content/uploads/2026/11/Webmaster-Position-Description.pdf
+Redirect 301 /files/2020/05/Parliamentarian-PDF.pdf /wp-content/uploads/2026/11/Parliamentarian-PDF.pdf
+Redirect 301 /files/2020/10/STEM-Initiative-Director-PDF.pdf /wp-content/uploads/2026/11/STEM-Initiative-Director-PDF.pdf
+Redirect 301 /files/2021/02/Program-VP-PDF.pdf /wp-content/uploads/2026/11/Program-VP-PDF.pdf
+Redirect 301 /files/2024/07/Community-Membership-in-Branch-PDF.pdf /wp-content/uploads/2026/11/Community-Membership-in-Branch-PDF.pdf
+Redirect 301 /files/2024/09/AAUW-Funds-Position-Description-PDF.pdf /wp-content/uploads/2026/11/AAUW-Funds-Position-Description-PDF.pdf
+Redirect 301 /files/2024/09/Book-Sale-Co-Chairs-Job-Description-PDF.pdf /wp-content/uploads/2026/11/Book-Sale-Co-Chairs-Job-Description-PDF.pdf
+Redirect 301 /files/2026/02/EMAIL-LIST-POLICIES-FINAL.pdf /wp-content/uploads/2026/11/EMAIL-LIST-POLICIES-FINAL.pdf
+Redirect 301 /files/2026/02/FINANCIAL-POLICIES-12-2-25-FINAL.pdf /wp-content/uploads/2026/11/FINANCIAL-POLICIES-12-2-25-FINAL.pdf
+Redirect 301 /files/2026/02/GENERAL-POLICIES-12-2-25-FINAL.pdf /wp-content/uploads/2026/11/GENERAL-POLICIES-12-2-25-FINAL.pdf
+Redirect 301 /files/2026/02/INTEREST-GROUP-POLICIES-12-2-25-FINAL.pdf /wp-content/uploads/2026/11/INTEREST-GROUP-POLICIES-12-2-25-FINAL.pdf
+Redirect 301 /activities/aauw-ann-arbor-used-book-sale-2021-canceled/the-book-sorting-process /book-sale/sorting-process/
