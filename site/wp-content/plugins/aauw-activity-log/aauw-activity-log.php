@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Editor Activity Log
  * Description: Records when each site editor logs in and out, how long they stay, which admin screens and pages they open, and every page they create, edit, publish, trash or upload to. Report under Users > Activity Log, with CSV export.
- * Version: 1.3.0
+ * Version: 1.3.1
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class AAUW_Activity_Log {
 
-	const VERSION        = '1.3.0';
+	const VERSION        = '1.3.1';
 	const OPTION         = 'aauw_activity_log_settings';
 	const IDLE_MINUTES   = 30;   // A session with no activity for this long is treated as ended.
 	const DEDUPE_SECONDS = 60;   // Don't log the same page for the same user twice within this window.
@@ -514,7 +514,7 @@ final class AAUW_Activity_Log {
 	private function session_row( $s ) {
 		$u      = get_userdata( $s->user_id );
 		$end    = $this->effective_end( $s );
-		$end_ts = $end ? strtotime( $end . ' UTC' ) : time();
+		$end_ts = strtotime( ( $end ? $end : $s->last_seen_at ) . ' UTC' ); // Open sessions count up to the last activity, not to now.
 		return array(
 			'session'       => substr( $s->session_key, 0, 8 ),
 			'user_id'       => (int) $s->user_id,
@@ -686,7 +686,7 @@ final class AAUW_Activity_Log {
 				$by[ $u ] = array( 'sessions' => 0, 'seconds' => 0, 'last_login' => '', 'admin_view' => 0, 'page_view' => 0, 'create' => 0, 'edit' => 0, 'publish' => 0, 'upload' => 0, 'trash' => 0, 'delete' => 0 );
 			}
 			$end = $this->effective_end( $s );
-			$end_ts = $end ? strtotime( $end . ' UTC' ) : time();
+			$end_ts = strtotime( ( $end ? $end : $s->last_seen_at ) . ' UTC' ); // Open sessions count up to the last activity, not to now.
 			$by[ $u ]['sessions']++;
 			$by[ $u ]['seconds'] += max( 0, $end_ts - strtotime( $s->login_at . ' UTC' ) );
 			if ( $s->login_at > $by[ $u ]['last_login'] ) {
@@ -780,7 +780,7 @@ final class AAUW_Activity_Log {
 				foreach ( $sessions as $s ) :
 					$u      = get_userdata( $s->user_id );
 					$end    = $this->effective_end( $s );
-					$end_ts = $end ? strtotime( $end . ' UTC' ) : time();
+					$end_ts = strtotime( ( $end ? $end : $s->last_seen_at ) . ' UTC' ); // Open sessions count up to the last activity, not to now.
 					$dur    = $end_ts - strtotime( $s->login_at . ' UTC' );
 					$reason = $end ? ( 'logout' === $s->end_reason ? 'Logged out' : 'Timed out (idle)' ) : 'Still active';
 					$parts  = array();
@@ -876,7 +876,7 @@ final class AAUW_Activity_Log {
 			foreach ( $this->query_sessions( $user, $from, $to ) as $s ) {
 				$u      = get_userdata( $s->user_id );
 				$end    = $this->effective_end( $s );
-				$end_ts = $end ? strtotime( $end . ' UTC' ) : time();
+				$end_ts = strtotime( ( $end ? $end : $s->last_seen_at ) . ' UTC' ); // Open sessions count up to the last activity, not to now.
 				fputcsv( $out, array(
 					$u ? $u->display_name : $s->user_id,
 					$u ? $u->user_login : '',

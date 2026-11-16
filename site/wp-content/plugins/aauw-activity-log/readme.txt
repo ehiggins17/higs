@@ -1,7 +1,7 @@
 === AAUW Editor Activity Log ===
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPL-2.0-or-later
 
 Records what each site editor does: logins, time on the site, screens and pages opened, and every page created, edited, published, trashed or uploaded to.
