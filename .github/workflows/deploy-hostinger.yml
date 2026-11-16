@@ -1,0 +1,35 @@
+# Deploys site/wp-content/ to the Hostinger WordPress site over FTPS on every push to the branch below.
+# One-time setup in GitHub: Settings > Secrets and variables > Actions > New repository secret:
+#   HOSTINGER_FTP_SERVER    e.g. ftp.silver-caribou-284529.hostingersite.com  (hPanel > Files > FTP Accounts)
+#   HOSTINGER_FTP_USERNAME  the FTP account username
+#   HOSTINGER_FTP_PASSWORD  its password
+# Only files that exist in site/wp-content/ are uploaded or updated. Nothing on the server is deleted.
+name: Deploy to Hostinger
+on:
+  push:
+    branches: [ claude/find-mom-nonprofit-emails-bp820p, main ]
+    paths: [ 'site/wp-content/**' ]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax-check PHP
+        run: |
+          set -e
+          find site/wp-content -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Upload over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HOSTINGER_FTP_SERVER }}
+          username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: site/wp-content/
+          server-dir: public_html/wp-content/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/*.bak-*
