@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Editor Activity Log
  * Description: Records when each site editor logs in and out, how long they stay, which admin screens and pages they open, and every page they create, edit, publish, trash or upload to. Report under Users > Activity Log, with CSV export.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class AAUW_Activity_Log {
 
-	const VERSION        = '1.1.0';
+	const VERSION        = '1.2.0';
 	const OPTION         = 'aauw_activity_log_settings';
 	const IDLE_MINUTES   = 30;   // A session with no activity for this long is treated as ended.
 	const DEDUPE_SECONDS = 60;   // Don't log the same page for the same user twice within this window.
@@ -63,6 +63,7 @@ final class AAUW_Activity_Log {
 		add_action( 'admin_init', array( $this, 'maybe_export_csv' ) );
 		add_action( 'admin_init', array( $this, 'maybe_save_settings' ) );
 		add_filter( 'all_plugins', array( $this, 'hide_from_plugins_list' ) );
+		add_action( 'rest_api_init', array( $this, 'register_rest' ) );
 		add_action( 'aauw_activity_log_cleanup', array( $this, 'cleanup' ) );
 	}
 
@@ -143,7 +144,7 @@ final class AAUW_Activity_Log {
 	 * Only one person can see the report, the settings, the exports, or even the plugin's row on the Plugins screen:
 	 * the user who activated the plugin, or the username set as AAUW_ACTIVITY_LOG_OWNER in wp-config.php.
 	 */
-	private function is_owner() {
+	public function is_owner() {
 		if ( ! is_user_logged_in() ) {
 			return false;
 		}
@@ -478,6 +479,113 @@ final class AAUW_Activity_Log {
 			$file = get_attached_file( $post_id );
 			$this->log( 'upload', sprintf( 'Uploaded "%s" (%s)', $post->post_title, $file ? basename( $file ) : $post->post_mime_type ), $post_id );
 		}
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Private read-only API, for the owner account only (Application Password over HTTPS).
+	 *   GET /wp-json/aauw-activity/v1/status                      who is logged in now, last login per editor
+	 *   GET /wp-json/aauw-activity/v1/report?from=YYYY-MM-DD&to=YYYY-MM-DD&user=ID&limit=N
+	 * ------------------------------------------------------------------ */
+
+	public function register_rest() {
+		register_rest_route( 'aauw-activity/v1', '/status', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_status' ),
+			'permission_callback' => array( $this, 'is_owner' ),
+		) );
+		register_rest_route( 'aauw-activity/v1', '/report', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'rest_report' ),
+			'permission_callback' => array( $this, 'is_owner' ),
+			'args'                => array(
+				'from'  => array( 'type' => 'string', 'required' => false ),
+				'to'    => array( 'type' => 'string', 'required' => false ),
+				'user'  => array( 'type' => 'integer', 'required' => false, 'default' => 0 ),
+				'limit' => array( 'type' => 'integer', 'required' => false, 'default' => 500 ),
+			),
+		) );
+	}
+
+	private function session_row( $s ) {
+		$u      = get_userdata( $s->user_id );
+		$end    = $this->effective_end( $s );
+		$end_ts = $end ? strtotime( $end . ' UTC' ) : time();
+		return array(
+			'session'       => substr( $s->session_key, 0, 8 ),
+			'user_id'       => (int) $s->user_id,
+			'user'          => $u ? $u->display_name : 'User #' . $s->user_id,
+			'username'      => $u ? $u->user_login : '',
+			'login_at'      => $this->fmt_local( $s->login_at ),
+			'last_activity' => $this->fmt_local( $s->last_seen_at ),
+			'logout_at'     => $end ? $this->fmt_local( $end ) : null,
+			'minutes'       => round( ( $end_ts - strtotime( $s->login_at . ' UTC' ) ) / 60, 1 ),
+			'ended_by'      => $end ? ( 'logout' === $s->end_reason ? 'logout' : 'timeout' ) : 'still active',
+			'login_at_utc'  => $s->login_at,
+		);
+	}
+
+	public function rest_status( $request ) {
+		global $wpdb;
+		$editors = get_users( array( 'capability' => 'edit_posts', 'orderby' => 'display_name' ) );
+		$out     = array( 'site_time' => wp_date( 'M j, Y g:i a T' ), 'editors' => array(), 'active_now' => array() );
+		foreach ( $editors as $ed ) {
+			$last = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$this->sessions_table} WHERE user_id = %d ORDER BY login_at DESC LIMIT 1", $ed->ID ) );
+			$n    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->sessions_table} WHERE user_id = %d", $ed->ID ) );
+			$edits = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->events_table} WHERE user_id = %d AND event IN ('create','edit','publish','upload')", $ed->ID ) );
+			$out['editors'][] = array(
+				'user_id'      => (int) $ed->ID,
+				'user'         => $ed->display_name,
+				'username'     => $ed->user_login,
+				'total_logins' => $n,
+				'content_changes_total' => $edits,
+				'last_session' => $last ? $this->session_row( $last ) : null,
+			);
+			if ( $last && null === $this->effective_end( $last ) ) {
+				$out['active_now'][] = $ed->display_name;
+			}
+		}
+		return rest_ensure_response( $out );
+	}
+
+	public function rest_report( $request ) {
+		$from = $request->get_param( 'from' );
+		$to   = $request->get_param( 'to' );
+		$from = ( $from && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from ) ) ? $from : gmdate( 'Y-m-d', time() - 30 * DAY_IN_SECONDS );
+		$to   = ( $to && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to ) ) ? $to : gmdate( 'Y-m-d' );
+		$user = (int) $request->get_param( 'user' );
+		$lim  = min( 5000, max( 1, (int) $request->get_param( 'limit' ) ) );
+		$sessions = $this->query_sessions( $user, $from . ' 00:00:00', $to . ' 23:59:59' );
+		$events   = $this->query_events( $user, $from . ' 00:00:00', $to . ' 23:59:59', $lim );
+		$summary  = array();
+		foreach ( $this->summarize( $sessions, $this->query_events( $user, $from . ' 00:00:00', $to . ' 23:59:59', 100000 ) ) as $uid => $row ) {
+			$u = get_userdata( $uid );
+			$row['user']       = $u ? $u->display_name : 'User #' . $uid;
+			$row['user_id']    = (int) $uid;
+			$row['minutes']    = round( $row['seconds'] / 60, 1 );
+			$row['last_login'] = $this->fmt_local( $row['last_login'] );
+			unset( $row['seconds'] );
+			$summary[] = $row;
+		}
+		$ev = array();
+		foreach ( $events as $e ) {
+			$u    = get_userdata( $e->user_id );
+			$ev[] = array(
+				'when'    => $this->fmt_local( $e->created_at ),
+				'user'    => $u ? $u->display_name : 'User #' . $e->user_id,
+				'event'   => $e->event,
+				'detail'  => $e->detail,
+				'url'     => $e->url,
+				'post_id' => (int) $e->post_id,
+				'session' => substr( $e->session_key, 0, 8 ),
+			);
+		}
+		return rest_ensure_response( array(
+			'from'     => $from,
+			'to'       => $to,
+			'summary'  => $summary,
+			'sessions' => array_map( array( $this, 'session_row' ), $sessions ),
+			'events'   => $ev,
+		) );
 	}
 
 	/* ---------------------------------------------------------------------

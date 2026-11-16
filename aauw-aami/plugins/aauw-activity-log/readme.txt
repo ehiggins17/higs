@@ -1,7 +1,7 @@
 === AAUW Editor Activity Log ===
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 
 Records what each site editor does: logins, time on the site, screens and pages opened, and every page created, edited, published, trashed or uploaded to.
@@ -49,3 +49,11 @@ see the plugin on the Plugins screen. To hand it to a different account, add thi
 define( 'AAUW_ACTIVITY_LOG_OWNER', 'username-or-email' );
 
 Anyone with database or file access to the hosting account can still read the raw tables.
+
+== Private API (for the owner only) ==
+
+With an Application Password for the owner account (Users > Profile > Application Passwords), these
+read-only addresses return the log as JSON. Any other account gets a 403.
+
+/wp-json/aauw-activity/v1/status
+/wp-json/aauw-activity/v1/report?from=2026-11-01&to=2026-11-30&user=0&limit=500
