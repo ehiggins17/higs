@@ -49,7 +49,7 @@ function aauw_help_page() {
         $list = AAUW_SITE_DIR . 'guide/videos/videos.json';
         $videos = file_exists($list) ? json_decode(file_get_contents($list), true) : array();
         if ($videos) {
-            echo '<p>Short videos recorded on this website. Each one shows the screen while a task is done, with a line of explanation at the bottom. They have no sound.</p>';
+            echo '<p>Short videos recorded on this website. Each one shows the screen while a task is done, with a voice explaining each step and the same words written at the bottom. Turn your sound on, or read along.</p>';
             foreach ($videos as $v) {
                 if (empty($v['file']) || !file_exists(AAUW_SITE_DIR . 'guide/videos/' . basename($v['file']))) continue;
                 echo '<h3 style="margin:26px 0 4px">' . esc_html($v['title']) . '</h3>';
