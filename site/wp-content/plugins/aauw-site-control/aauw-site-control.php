@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AAUW Site Control
  * Description: Owner-only remote administration over the REST API: install and activate plugins, read and write theme and plugin files, change settings, export content, and switch domains. Authenticates with the owner's Application Password or a private token header. No arbitrary code execution.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Eric Higgins
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -136,8 +136,13 @@ final class AAUW_Site_Control {
 		}
 		if ( 0 === strpos( $rel, 'wp-content/' ) ) {
 			$rel = substr( $rel, 11 );
+		} elseif ( 'wp-content' === $rel ) {
+			$rel = '';
 		}
 		$base = rtrim( wp_normalize_path( WP_CONTENT_DIR ), '/' );
+		if ( '' === $rel ) {
+			return $base; // wp-content itself (the deploy target)
+		}
 		$full = $base . '/' . $rel;
 		if ( $must_exist ) {
 			$real = realpath( $full );
@@ -180,6 +185,7 @@ final class AAUW_Site_Control {
 		$r( '/file', 'GET', 'file_read' );
 		$r( '/file', 'PUT', 'file_write' );
 		$r( '/file', 'DELETE', 'file_delete' );
+		$r( '/dir', 'DELETE', 'dir_delete' );
 		$r( '/unzip', 'POST', 'unzip' );
 		$r( '/option', 'GET', 'option_get' );
 		$r( '/option', 'POST', 'option_set' );
@@ -229,20 +235,67 @@ final class AAUW_Site_Control {
 	}
 
 	/** Body: { "zip_base64": "...", "activate": true }  or { "url": "https://.../plugin.zip" } */
+	/* Extract a zip with PHP's ZipArchive and plain file writes. WordPress's unzip_file() depends on WP_Filesystem,
+	   which on this host silently writes nothing, so every route that unpacks a zip goes through here. */
+	private function extract_zip( $tmp, $to ) {
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			return new WP_Error( 'no_ziparchive', 'ZipArchive is not available on this server.', array( 'status' => 500 ) );
+		}
+		$zip = new ZipArchive();
+		if ( true !== $zip->open( $tmp ) ) {
+			return new WP_Error( 'bad_zip', 'Could not open the zip.', array( 'status' => 400 ) );
+		}
+		$base    = rtrim( wp_normalize_path( $to ), '/' );
+		$written = 0;
+		$bytes   = 0;
+		$skipped = array();
+		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+			$name = $zip->getNameIndex( $i );
+			$name = str_replace( '\\', '/', $name );
+			if ( '' === $name || '/' === substr( $name, -1 ) ) {
+				continue; // directory entry
+			}
+			if ( false !== strpos( $name, '..' ) || false !== strpos( $name, "\0" ) || 0 === strpos( $name, '/' ) || 0 === strpos( $name, '__MACOSX/' ) ) {
+				$skipped[] = $name;
+				continue;
+			}
+			$dest = $base . '/' . $name;
+			$dir  = dirname( $dest );
+			if ( ! is_dir( $dir ) && ! wp_mkdir_p( $dir ) ) {
+				$zip->close();
+				return new WP_Error( 'mkdir_failed', 'Could not create ' . $dir, array( 'status' => 500 ) );
+			}
+			$data = $zip->getFromIndex( $i );
+			if ( false === $data ) {
+				$skipped[] = $name;
+				continue;
+			}
+			$ok = file_put_contents( $dest, $data, LOCK_EX );
+			if ( false === $ok ) {
+				$zip->close();
+				return new WP_Error( 'write_failed', 'Could not write ' . $name . ' (permissions?).', array( 'status' => 500 ) );
+			}
+			$written++;
+			$bytes += $ok;
+		}
+		$zip->close();
+		return array( 'files' => $written, 'bytes' => $bytes, 'skipped' => $skipped );
+	}
+
 	public function plugins_install( $req ) {
 		$this->load_admin_files();
 		$tmp = $this->zip_from_request( $req );
 		if ( is_wp_error( $tmp ) ) {
 			return $tmp;
 		}
-		$res = unzip_file( $tmp, WP_PLUGIN_DIR );
+		$res = $this->extract_zip( $tmp, WP_PLUGIN_DIR );
 		@unlink( $tmp );
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
 		wp_cache_delete( 'plugins', 'plugins' );
 		$installed = array_keys( get_plugins() );
-		$result    = array( 'installed' => true );
+		$result    = array( 'installed' => true, 'files' => $res['files'], 'bytes' => $res['bytes'] );
 		$wanted    = $req->get_param( 'plugin' );
 		if ( $req->get_param( 'activate' ) ) {
 			$target = $wanted ? $wanted : $this->newest_plugin_file( $installed );
@@ -429,6 +482,33 @@ final class AAUW_Site_Control {
 	}
 
 	/** Body: { "zip_base64": "...", "to": "wp-content/themes" } — unpack any zip under wp-content. */
+	/* Delete a directory tree inside wp-content (used to clean up stray deploy output). */
+	public function dir_delete( $req ) {
+		$path = $this->resolve( $req->get_param( 'path' ) );
+		if ( is_wp_error( $path ) ) {
+			return $path;
+		}
+		$base = rtrim( wp_normalize_path( WP_CONTENT_DIR ), '/' );
+		if ( ! is_dir( $path ) || $path === $base || in_array( $path, array( $base . '/plugins', $base . '/themes', $base . '/uploads' ), true ) ) {
+			return new WP_Error( 'refused', 'Not a deletable directory.', array( 'status' => 400 ) );
+		}
+		if ( false !== strpos( $path, 'aauw-site-control' ) ) {
+			return new WP_Error( 'refused', 'Not deleting the control plugin over its own API.', array( 'status' => 400 ) );
+		}
+		$count = 0;
+		$it    = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $path, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST );
+		foreach ( $it as $f ) {
+			if ( $f->isDir() ) {
+				rmdir( $f->getPathname() );
+			} else {
+				unlink( $f->getPathname() );
+				$count++;
+			}
+		}
+		$ok = rmdir( $path );
+		return rest_ensure_response( array( 'deleted' => $req->get_param( 'path' ), 'files' => $count, 'removed' => $ok ) );
+	}
+
 	public function unzip( $req ) {
 		$this->load_admin_files();
 		$to = $this->resolve( $req->get_param( 'to' ) ? $req->get_param( 'to' ) : 'wp-content', false );
@@ -440,9 +520,12 @@ final class AAUW_Site_Control {
 			return $tmp;
 		}
 		wp_mkdir_p( $to );
-		$res = unzip_file( $tmp, $to );
+		$res = $this->extract_zip( $tmp, $to );
 		@unlink( $tmp );
-		return is_wp_error( $res ) ? $res : rest_ensure_response( array( 'unzipped_to' => $req->get_param( 'to' ) ) );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return rest_ensure_response( array( 'unzipped_to' => $req->get_param( 'to' ), 'files' => $res['files'], 'bytes' => $res['bytes'], 'skipped' => $res['skipped'] ) );
 	}
 
 	/* options */
@@ -551,6 +634,7 @@ final class AAUW_Site_Control {
 		if ( class_exists( 'LiteSpeed\Purge' ) ) { do_action( 'litespeed_purge_all' ); }
 		if ( function_exists( 'wp_cache_clear_cache' ) ) { wp_cache_clear_cache(); }
 		flush_rewrite_rules();
+		if ( function_exists( 'opcache_reset' ) ) { @opcache_reset(); }
 		return rest_ensure_response( array( 'flushed' => true ) );
 	}
 

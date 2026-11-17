@@ -54,7 +54,8 @@ function aauw_help_page() {
                 if (empty($v['file']) || !file_exists(AAUW_SITE_DIR . 'guide/videos/' . basename($v['file']))) continue;
                 echo '<h3 style="margin:26px 0 4px">' . esc_html($v['title']) . '</h3>';
                 if (!empty($v['blurb'])) echo '<p style="margin:0 0 8px;color:#50575e">' . esc_html($v['blurb']) . '</p>';
-                echo '<video controls preload="metadata" style="width:100%;max-width:820px;border:1px solid #c3c4c7;border-radius:6px;background:#000" src="' . esc_url(AAUW_SITE_URL . 'guide/videos/' . basename($v['file'])) . '"></video>';
+                $vfile = AAUW_SITE_DIR . 'guide/videos/' . basename($v['file']);
+                echo '<video controls preload="metadata" style="width:100%;max-width:820px;border:1px solid #c3c4c7;border-radius:6px;background:#000" src="' . esc_url(AAUW_SITE_URL . 'guide/videos/' . basename($v['file']) . '?v=' . (int) filemtime($vfile)) . '"></video>';
             }
         } else echo '<p>Short videos recorded on this website will appear here. Until then, the <a href="' . esc_url(admin_url('admin.php?page=aauw-guide&tab=guide')) . '">Website Editor\'s Guide</a> shows every step with pictures.</p>';
     } elseif (function_exists('aauw_requests_ready') && aauw_requests_ready()) {

@@ -6,7 +6,7 @@ Never put a password or token in this file. Values live in the places named belo
 | Route | What it reaches | Status | Where the secret lives |
 |---|---|---|---|
 | GitHub `ehiggins17/higs` | Source of truth: plugins, theme files, redirects, docs. | Working. Push access granted 2026-11-16. | GitHub App installation |
-| GitHub Actions deploy | Pushes `site/wp-content/` to Hostinger over FTPS on every push. | Needs three repository secrets (see workflow file). | GitHub > Settings > Secrets |
+| GitHub Actions deploy | Unpacks `site/wp-content/` onto the site through the Site Control API on every push. | Working since 2026-11-17 (Site Control 1.1.1 fixed a bug that unpacked deploys into a stray `wp-content/wp-content/` folder; the workflow now fails if zero files land). | Secret `AAUW_SITE_TOKEN`, variable `AAUW_SITE_URL` |
 | Site Control plugin API | Install plugins, edit theme/plugin files, options, export, search-replace, cache flush. | Working since 2026-11-16 (v1.0.3). | Token: Claude's credential store, header `X-AAUW-Token`. Generated at Settings > Site Control. |
 | Activity Log plugin API | Who logged in, when, for how long, what they changed. | Working (v1.3.0). Uses the same token. | Same |
 | WordPress REST API (core) | Pages, media, users, menus. | Working with the token (used to upload the 15 PDFs). | Application Password: Claude's credential store for the staging host |

@@ -38,7 +38,10 @@ jobs:
                     headers={'Content-Type': 'application/json', 'X-AAUW-Token': tok, 'User-Agent': 'github-actions-deploy'}, method='POST')
               with urllib.request.urlopen(req, timeout=300) as r: return json.loads(r.read())
           z = base64.b64encode(open('deploy.zip', 'rb').read()).decode()
-          print('unzip ->', call('unzip', {'zip_base64': z, 'to': 'wp-content'}))
+          res = call('unzip', {'zip_base64': z, 'to': 'wp-content'})
+          print('unzip ->', res)
+          if not res.get('files'):
+              raise SystemExit('::error title=Deploy wrote nothing::The site unpacked zero files. Check the Site Control plugin on the site.')
           print('flush ->', call('cache/flush', {}))
           req = urllib.request.Request(f"{site}/wp-json/aauw-control/v1/ping", headers={'X-AAUW-Token': tok, 'User-Agent': 'github-actions-deploy'})
           with urllib.request.urlopen(req, timeout=60) as r: print('ping ->', json.loads(r.read())['ok'])
